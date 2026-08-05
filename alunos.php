@@ -1,147 +1,172 @@
 <?php
-// Configuração do banco de dados
-$host = 'localhost';
-$dbname = 'escola_taekwondo';
-$username = 'root';
-$password = '';
+require_once __DIR__ . '/config/faixas.php';
+
+$alunos = [];
+$erro_bd = '';
 
 try {
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    
-    // Buscar alunos do banco de dados
-    $stmt = $pdo->query('SELECT * FROM alunos ORDER BY nome');
-    $alunos = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
+    require __DIR__ . '/config/database.php';
+    $alunos = $pdo->query('SELECT * FROM alunos ORDER BY nome')->fetchAll();
 } catch (PDOException $e) {
-    $erro_bd = "Erro ao conectar com o banco de dados: " . $e->getMessage();
-    $alunos = [];
+    $erro_bd = 'Não foi possível conectar ao banco de dados. Verifique se o MySQL está em execução.';
 }
 
-// Função para obter cor da faixa
-function getCorFaixa($faixa) {
-    $cores = [
-        'Branca' => 'white',
-        'Amarela' => 'yellow',
-        'Verde' => 'green',
-        'Azul' => 'blue',
-        'Vermelha' => 'red',
-        'Preta' => 'black'
-    ];
-    return $cores[$faixa] ?? 'gray';
-}
+// Distribuicao por faixa, para o resumo no topo da pagina
+$porFaixa = array_count_values(array_column($alunos, 'faixa'));
+
+$titulo = 'Alunos';
+$descricao = 'Conheça os alunos da Escola de Taekwondo, suas graduações e tempo de prática.';
+include 'partials/head.php';
+include 'partials/header.php';
 ?>
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alunos - Escola de Taekwondo</title>
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/alunos.css">
-</head>
-<body>
-    <header>
-        <div class="container">
-            <nav>
-                <ul>
-                    <li><a href="index.html">Home</a></li>
-                    <li><a href="alunos.php">Alunos</a></li>
-                    <li><a href="tabela.html">Faixas</a></li>
-                    <li><a href="sac.html">SAC</a></li>
-                    <li><a href="integrantes.html">Integrantes</a></li>
-                </ul>
-            </nav>
-        </div>
-    </header>
 
-    <main class="container">
-        <div class="content-section">
-            <h1>Nossos Alunos</h1>
-            <p>Conheça nossos talentosos alunos e suas conquistas:</p>
-            
-            <?php if (isset($erro_bd)): ?>
-                <div class="erro"><?= $erro_bd ?></div>
+<main class="flex-1">
+    <section class="secao">
+        <div class="container-site">
+
+            <div class="flex flex-wrap items-end justify-between gap-6">
+                <div class="max-w-2xl">
+                    <p class="titulo-apoio">Nosso tatame</p>
+                    <h1 class="titulo-secao">Nossos alunos</h1>
+                    <p class="subtitulo-secao">
+                        Conheça os praticantes da escola, suas graduações e o tempo de dedicação
+                        de cada um.
+                    </p>
+                </div>
+
+                <a href="adicionar_aluno.php" class="btn-primario">
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M12 5v14m-7-7h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    Adicionar aluno
+                </a>
+            </div>
+
+            <?php if ($erro_bd): ?>
+                <div class="alerta-erro mt-8">
+                    <svg class="mt-0.5 h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M12 9v4m0 4h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"
+                              stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span><?= htmlspecialchars($erro_bd) ?></span>
+                </div>
             <?php endif; ?>
-            
-            <?php if (isset($_GET['sucesso']) && $_GET['sucesso'] == 1): ?>
-                <div class="sucesso">Operação realizada com sucesso!</div>
+
+            <?php if (isset($_GET['sucesso'])): ?>
+                <div class="alerta-sucesso mt-8">
+                    <svg class="mt-0.5 h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                              stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span>Operação realizada com sucesso.</span>
+                </div>
             <?php endif; ?>
-            
-            <?php if (isset($_GET['erro']) && $_GET['erro'] == 1): ?>
-                <div class="erro">Erro ao realizar a operação. Tente novamente.</div>
+
+            <?php if (isset($_GET['erro'])): ?>
+                <div class="alerta-erro mt-8">
+                    <svg class="mt-0.5 h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M12 9v4m0 4h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"
+                              stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span>Erro ao realizar a operação. Tente novamente.</span>
+                </div>
             <?php endif; ?>
-            
-            <!-- Botão para adicionar novo aluno -->
-            <a href="adicionar_aluno.php" class="btn btn-adicionar"> Adicionar Novo Aluno</a>
-            
-            <table id="tabela-alunos">
-                <thead>
-                    <tr>
-                        <th>Foto</th>
-                        <th>Nome</th>
-                        <th>Idade</th>
-                        <th>Faixa</th>
-                        <th>Tempo de Prática</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (empty($alunos)): ?>
+
+            <?php if ($alunos): ?>
+                <!-- Resumo por graduação -->
+                <div class="mt-10 flex flex-wrap items-center gap-2">
+                    <span class="chip bg-tkd-900 text-white ring-tkd-900">
+                        <?= count($alunos) ?> <?= count($alunos) === 1 ? 'aluno' : 'alunos' ?>
+                    </span>
+                    <?php foreach ($FAIXAS as $faixa): ?>
+                        <?php if (!empty($porFaixa[$faixa])): ?>
+                            <span class="chip ring-inset <?= classesFaixa($faixa) ?>">
+                                <?= $faixa ?> &middot; <?= $porFaixa[$faixa] ?>
+                            </span>
+                        <?php endif; ?>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+
+            <div class="tabela-wrap mt-6">
+                <table class="tabela">
+                    <thead>
                         <tr>
-                            <td colspan="6" style="text-align: center; padding: 20px;">
-                                Nenhum aluno cadastrado no momento.
-                            </td>
+                            <th>Aluno</th>
+                            <th class="w-24">Idade</th>
+                            <th class="w-36">Faixa</th>
+                            <th class="w-40">Tempo de prática</th>
+                            <th class="w-44 text-right">Ações</th>
                         </tr>
-                    <?php else: ?>
-                        <?php foreach ($alunos as $aluno): ?>
-                        <tr>
-                            <td>
-                                <?php if (filter_var($aluno['foto'], FILTER_VALIDATE_URL)): ?>
-                                    <!-- Se for uma URL externa -->
-                                    <img src="<?= htmlspecialchars($aluno['foto']) ?>" 
-                                         alt="Foto de <?= htmlspecialchars($aluno['nome']) ?>" 
-                                         class="foto-aluno"
-                                         onerror="this.src='img/placeholder.jpg'">
-                                <?php else: ?>
-                                    <!-- Se for uma imagem local -->
-                                    <img src="uploads/<?= htmlspecialchars($aluno['foto']) ?>" 
-                                         alt="Foto de <?= htmlspecialchars($aluno['nome']) ?>" 
-                                         class="foto-aluno"
-                                         onerror="this.src='img/placeholder.jpg'">
-                                <?php endif; ?>
-                            </td>
-                            <td><?= htmlspecialchars($aluno['nome']) ?></td>
-                            <td><?= htmlspecialchars($aluno['idade']) ?> anos</td>
-                            <td>
-                                <div class="faixa-aluno" 
-                                     style="background-color: <?= getCorFaixa($aluno['faixa']) ?>; 
-                                            color: <?= in_array($aluno['faixa'], ['Branca', 'Amarela']) ? 'black' : 'white' ?>;">
-                                    <?= htmlspecialchars($aluno['faixa']) ?>
-                                </div>
-                            </td>
-                            <td><?= htmlspecialchars($aluno['tempo']) ?></td>
-                            <td class="acoes">
-                                <a href="editar_aluno.php?id=<?= $aluno['id'] ?>" class="btn btn-editar"> Editar</a>
-                                <a href="excluir_aluno.php?id=<?= $aluno['id'] ?>" class="btn btn-excluir" 
-                                   onclick="return confirm('Tem certeza que deseja excluir o aluno <?= htmlspecialchars(addslashes($aluno['nome'])) ?>?')">
-                                    Excluir
-                                </a>
-                            </td>
-                        </tr>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
-    </main>
+                    </thead>
+                    <tbody>
+                        <?php if (!$alunos): ?>
+                            <tr>
+                                <td colspan="5" class="py-16 text-center">
+                                    <span class="mx-auto grid h-12 w-12 place-items-center rounded-full bg-neutral-100 text-neutral-400 dark:bg-neutral-800">
+                                        <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                            <path d="M17 20h5v-2a3 3 0 00-5.36-1.86M17 20H7m10 0v-2c0-.66-.13-1.3-.36-1.86M7 20H2v-2a3 3 0 015.36-1.86M7 20v-2c0-.66.13-1.3.36-1.86m0 0a5 5 0 019.28 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"
+                                                  stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
+                                    </span>
+                                    <p class="mt-4 font-semibold text-tkd-950 dark:text-white">
+                                        <?= $erro_bd ? 'Não foi possível carregar os alunos' : 'Nenhum aluno cadastrado' ?>
+                                    </p>
+                                    <p class="mt-1 text-sm text-neutral-500">
+                                        <?= $erro_bd
+                                            ? 'Ligue o MySQL no painel do XAMPP e recarregue a página.'
+                                            : 'Comece adicionando o primeiro aluno da escola.' ?>
+                                    </p>
+                                    <?php if (!$erro_bd): ?>
+                                        <a href="adicionar_aluno.php" class="btn-primario btn-sm mt-6">Adicionar aluno</a>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                        <?php else: ?>
+                            <?php foreach ($alunos as $aluno): ?>
+                                <tr>
+                                    <td>
+                                        <div class="flex items-center gap-3">
+                                            <img src="<?= htmlspecialchars(caminhoFoto($aluno['foto'])) ?>"
+                                                 alt="Foto de <?= htmlspecialchars($aluno['nome']) ?>"
+                                                 class="h-11 w-11 shrink-0 rounded-full object-cover ring-1 ring-neutral-200 dark:ring-neutral-700"
+                                                 onerror="this.src='img/placeholder.jpg'">
+                                            <span class="font-semibold text-tkd-950 dark:text-white">
+                                                <?= htmlspecialchars($aluno['nome']) ?>
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td class="whitespace-nowrap text-neutral-600 dark:text-neutral-400">
+                                        <?= htmlspecialchars($aluno['idade']) ?> anos
+                                    </td>
+                                    <td>
+                                        <span class="chip ring-inset <?= classesFaixa($aluno['faixa']) ?>">
+                                            <?= htmlspecialchars($aluno['faixa']) ?>
+                                        </span>
+                                    </td>
+                                    <td class="whitespace-nowrap text-neutral-600 dark:text-neutral-400">
+                                        <?= htmlspecialchars($aluno['tempo']) ?>
+                                    </td>
+                                    <td>
+                                        <div class="flex justify-end gap-2">
+                                            <a href="editar_aluno.php?id=<?= (int) $aluno['id'] ?>" class="btn-contorno btn-sm">
+                                                Editar
+                                            </a>
+                                            <a href="excluir_aluno.php?id=<?= (int) $aluno['id'] ?>" class="btn-perigo btn-sm"
+                                               onclick="return confirm('Deseja mesmo excluir o aluno <?= htmlspecialchars(addslashes($aluno['nome']), ENT_QUOTES) ?>?')">
+                                                Excluir
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
 
-    <footer>
-        <div class="container">
-            <p>&copy; 2025 Escola de Taekwondo - Todos os direitos reservados</p>
         </div>
-    </footer>
+    </section>
+</main>
 
-    <script src="js/tema.js"></script>
-</body>
-</html>
+<?php include 'partials/footer.php'; ?>

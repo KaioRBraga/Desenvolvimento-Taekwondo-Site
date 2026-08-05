@@ -1,0 +1,197 @@
+@import "tailwindcss";
+
+/* Tema escuro controlado por classe (.dark no <html>), nao pela preferencia do SO */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  /* Escala completa da cor da marca, derivada do azul original (#1a237e / #3949ab) */
+  --color-tkd-50:  #eef1fa;
+  --color-tkd-100: #d8dff3;
+  --color-tkd-200: #b3bfe7;
+  --color-tkd-300: #8b9bd8;
+  --color-tkd-400: #6b7ccb;
+  --color-tkd-500: #4f5fb8;
+  --color-tkd-600: #3949ab;
+  --color-tkd-700: #2c3792;
+  --color-tkd-800: #212b85;
+  --color-tkd-900: #1a237e;
+  --color-tkd-950: #10154d;
+
+  /* Acento quente, usado com parcimonia em CTAs e destaques */
+  --color-brasa-400: #f87171;
+  --color-brasa-500: #ef4444;
+  --color-brasa-600: #dc2626;
+
+  --font-sans: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+
+  --shadow-suave: 0 1px 2px rgb(16 21 77 / 0.04), 0 8px 24px -12px rgb(16 21 77 / 0.18);
+  --shadow-realce: 0 2px 4px rgb(16 21 77 / 0.06), 0 16px 40px -16px rgb(16 21 77 / 0.28);
+}
+
+@layer base {
+  /* Rolagem suave para as ancoras internas da home */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Deixa o alvo da ancora abaixo do header fixo */
+  [id] {
+    scroll-margin-top: 6rem;
+  }
+
+  ::selection {
+    background-color: var(--color-tkd-900);
+    color: white;
+  }
+}
+
+/* Bases compostas por outras classes precisam ser @utility:
+   o @apply do Tailwind v4 so aceita utilitarios, nao classes de @layer components. */
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3
+         text-sm font-semibold transition duration-200
+         focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-tkd-600;
+}
+
+@utility alerta {
+  @apply mb-6 flex items-start gap-3 rounded-xl px-4 py-3 text-sm font-medium ring-1;
+}
+
+@layer components {
+  /* ---------- Estrutura ---------- */
+  .container-site {
+    @apply mx-auto w-[92%] max-w-6xl;
+  }
+
+  .secao {
+    @apply py-14 sm:py-20;
+  }
+
+  /* ---------- Superficies ---------- */
+  .card {
+    @apply rounded-2xl bg-white p-6 shadow-suave ring-1 ring-tkd-900/5 sm:p-8
+           dark:bg-neutral-900 dark:ring-white/10;
+  }
+
+  .card-hover {
+    @apply transition duration-200 hover:-translate-y-1 hover:shadow-realce;
+  }
+
+  /* ---------- Titulos ---------- */
+  .titulo-apoio {
+    @apply text-sm font-semibold tracking-[0.2em] text-tkd-600 uppercase dark:text-tkd-300;
+  }
+
+  .titulo-secao {
+    @apply mt-3 text-3xl font-bold tracking-tight text-tkd-950 sm:text-4xl dark:text-white;
+  }
+
+  .subtitulo-secao {
+    @apply mt-4 max-w-2xl text-lg text-neutral-600 dark:text-neutral-400;
+  }
+
+  /* ---------- Botoes ---------- */
+  .btn-primario {
+    @apply btn bg-tkd-900 text-white shadow-suave
+           hover:-translate-y-0.5 hover:bg-tkd-800 hover:shadow-realce
+           dark:bg-tkd-600 dark:hover:bg-tkd-500;
+  }
+
+  .btn-acento {
+    @apply btn bg-brasa-600 text-white shadow-suave
+           hover:-translate-y-0.5 hover:bg-brasa-500 hover:shadow-realce;
+  }
+
+  .btn-contorno {
+    @apply btn ring-1 ring-tkd-900/15 text-tkd-900 hover:bg-tkd-50
+           dark:text-neutral-100 dark:ring-white/20 dark:hover:bg-white/10;
+  }
+
+  .btn-claro {
+    @apply btn bg-white/10 text-white ring-1 ring-white/25 backdrop-blur
+           hover:-translate-y-0.5 hover:bg-white/20;
+  }
+
+  .btn-perigo {
+    @apply btn bg-red-50 text-red-700 ring-1 ring-red-600/20 hover:bg-red-100
+           dark:bg-red-950/40 dark:text-red-300 dark:ring-red-400/20 dark:hover:bg-red-950/70;
+  }
+
+  .btn-sm {
+    @apply px-3.5 py-2 text-xs;
+  }
+
+  /* ---------- Formularios ---------- */
+  .campo {
+    @apply mb-5;
+  }
+
+  .rotulo {
+    @apply mb-2 block text-sm font-semibold text-tkd-900 dark:text-neutral-200;
+  }
+
+  .input {
+    @apply w-full rounded-xl border-0 bg-white px-4 py-3 text-neutral-900
+           ring-1 ring-neutral-300 transition
+           placeholder:text-neutral-400
+           focus:ring-2 focus:ring-tkd-600 focus:outline-none
+           dark:bg-neutral-800 dark:text-neutral-100 dark:ring-neutral-700
+           dark:placeholder:text-neutral-500 dark:focus:ring-tkd-400;
+  }
+
+  .ajuda {
+    @apply mt-1.5 block text-xs text-neutral-500 dark:text-neutral-400;
+  }
+
+  .erro-campo {
+    @apply mt-1.5 block text-xs font-medium text-red-600 dark:text-red-400;
+  }
+
+  /* ---------- Avisos ---------- */
+  .alerta-erro {
+    @apply alerta bg-red-50 text-red-800 ring-red-600/20
+           dark:bg-red-950/40 dark:text-red-200 dark:ring-red-400/20;
+  }
+
+  .alerta-sucesso {
+    @apply alerta bg-emerald-50 text-emerald-800 ring-emerald-600/20
+           dark:bg-emerald-950/40 dark:text-emerald-200 dark:ring-emerald-400/20;
+  }
+
+  /* ---------- Tabelas ---------- */
+  .tabela-wrap {
+    @apply overflow-x-auto rounded-2xl bg-white shadow-suave ring-1 ring-tkd-900/5
+           dark:bg-neutral-900 dark:ring-white/10;
+  }
+
+  .tabela {
+    @apply w-full border-collapse text-left text-sm;
+  }
+
+  .tabela thead th {
+    @apply bg-tkd-900 px-5 py-4 text-xs font-semibold tracking-wider text-white uppercase
+           dark:bg-tkd-950;
+  }
+
+  .tabela tbody td {
+    @apply border-t border-neutral-200 px-5 py-4 align-middle dark:border-neutral-800;
+  }
+
+  .tabela tbody tr {
+    @apply transition hover:bg-tkd-50/70 dark:hover:bg-white/5;
+  }
+
+  /* ---------- Diversos ---------- */
+  .chip {
+    @apply inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ring-1 ring-inset;
+  }
+
+  .link-nav {
+    @apply block rounded-lg px-3.5 py-2 text-sm font-medium text-white/80 transition
+           hover:bg-white/10 hover:text-white;
+  }
+
+  .link-nav-ativo {
+    @apply bg-white/15 text-white;
+  }
+}

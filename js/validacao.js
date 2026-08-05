@@ -1,106 +1,105 @@
-
-document.addEventListener('DOMContentLoaded', function() {
-    const form = document.getElementById('contact-form');
-    const emailInput = document.getElementById('email');
-    const cpfInput = document.getElementById('cpf');
-
-    if (form && !cpfInput) {
-        const emailGroup = document.querySelector('label[for="email"]').parentElement;
-        const cpfGroup = document.createElement('div');
-        cpfGroup.className = 'form-group';
-        cpfGroup.innerHTML = `
-            <label for="cpf">CPF:</label>
-            <input type="text" id="cpf" name="cpf" placeholder="999.999.999-99" required>
-            <small class="error-message" id="cpf-error"></small>
-        `;
-        emailGroup.parentNode.insertBefore(cpfGroup, emailGroup.nextSibling);
+document.addEventListener('DOMContentLoaded', function () {
+    const formulario = document.getElementById('contact-form');
+    if (!formulario) {
+        return;
     }
 
-    // Função para validar email
+    const campoEmail = document.getElementById('email');
+    const campoCpf = document.getElementById('cpf');
+
+    const CLASSES_ERRO = ['ring-2', 'ring-red-500'];
+    const CLASSES_OK = ['ring-2', 'ring-emerald-500'];
+
     function validarEmail(email) {
-        const regex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-        return regex.test(email);
+        return /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email);
     }
 
-    // Função para validar CPF
     function validarCPF(cpf) {
-        const regex = /^\d{3}\.\d{3}\.\d{3}-\d{2}$/;
-        return regex.test(cpf);
+        return /^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(cpf);
     }
 
-    // Formatar CPF automaticamente
     function formatarCPF(cpf) {
-        cpf = cpf.replace(/\D/g, '');
-        cpf = cpf.replace(/(\d{3})(\d)/, '$1.$2');
-        cpf = cpf.replace(/(\d{3})(\d)/, '$1.$2');
-        cpf = cpf.replace(/(\d{3})(\d{2})$/, '$1-$2');
-        return cpf;
+        return cpf
+            .replace(/\D/g, '')
+            .replace(/(\d{3})(\d)/, '$1.$2')
+            .replace(/(\d{3})(\d)/, '$1.$2')
+            .replace(/(\d{3})(\d{2})$/, '$1-$2');
     }
 
-    // Event listeners
-    if (emailInput) {
-        emailInput.addEventListener('blur', function() {
-            const errorElement = document.getElementById('email-error') || criarElementoErro(emailInput);
-            if (!validarEmail(this.value)) {
-                errorElement.textContent = 'Formato inválido. Use: exemplo@dominio.com';
-                this.style.borderColor = '#e74c3c';
-            } else {
-                errorElement.textContent = '';
-                this.style.borderColor = '#27ae60';
+    function aplicarEstado(campo, valido, mensagem) {
+        const erro = document.getElementById(campo.id + '-error');
+
+        campo.classList.remove(...CLASSES_ERRO, ...CLASSES_OK);
+        campo.classList.add(...(valido ? CLASSES_OK : CLASSES_ERRO));
+        campo.setAttribute('aria-invalid', String(!valido));
+
+        if (erro) {
+            erro.textContent = valido ? '' : mensagem;
+        }
+    }
+
+    function limparEstado(campo) {
+        campo.classList.remove(...CLASSES_ERRO, ...CLASSES_OK);
+        campo.removeAttribute('aria-invalid');
+        const erro = document.getElementById(campo.id + '-error');
+        if (erro) {
+            erro.textContent = '';
+        }
+    }
+
+    if (campoEmail) {
+        campoEmail.addEventListener('blur', function () {
+            // Campo vazio ainda nao foi preenchido: nao acusa erro antes da hora
+            if (this.value === '') {
+                limparEstado(this);
+                return;
             }
+            aplicarEstado(this, validarEmail(this.value), 'Formato inválido. Use: exemplo@dominio.com');
         });
     }
 
-    const cpfField = document.getElementById('cpf');
-    if (cpfField) {
-
-        cpfField.addEventListener('input', function() {
+    if (campoCpf) {
+        campoCpf.addEventListener('input', function () {
             this.value = formatarCPF(this.value);
         });
 
-        cpfField.addEventListener('blur', function() {
-            const errorElement = document.getElementById('cpf-error');
-            if (!validarCPF(this.value)) {
-                errorElement.textContent = 'Formato inválido. Use: 999.999.999-99';
-                this.style.borderColor = '#e74c3c';
-            } else {
-                errorElement.textContent = '';
-                this.style.borderColor = '#27ae60';
+        campoCpf.addEventListener('blur', function () {
+            if (this.value === '') {
+                limparEstado(this);
+                return;
             }
+            aplicarEstado(this, validarCPF(this.value), 'Formato inválido. Use: 999.999.999-99');
         });
     }
 
+    formulario.addEventListener('submit', function (evento) {
+        evento.preventDefault();
 
-    if (form) {
-        form.addEventListener('submit', function(e) {
-            let isValid = true;
-            const email = document.getElementById('email');
-            const cpf = document.getElementById('cpf');
+        let valido = true;
 
-            if (email && !validarEmail(email.value)) {
-                isValid = false;
-                email.style.borderColor = '#e74c3c';
+        if (campoEmail) {
+            const emailOk = validarEmail(campoEmail.value);
+            aplicarEstado(campoEmail, emailOk, 'Formato inválido. Use: exemplo@dominio.com');
+            valido = valido && emailOk;
+        }
+
+        if (campoCpf) {
+            const cpfOk = validarCPF(campoCpf.value);
+            aplicarEstado(campoCpf, cpfOk, 'Formato inválido. Use: 999.999.999-99');
+            valido = valido && cpfOk;
+        }
+
+        if (!valido) {
+            alert('Por favor, corrija os erros no formulário antes de enviar.');
+            return;
+        }
+
+        alert('Formulário enviado com sucesso!');
+        formulario.reset();
+        [campoEmail, campoCpf].forEach(function (campo) {
+            if (campo) {
+                limparEstado(campo);
             }
-
-            if (cpf && !validarCPF(cpf.value)) {
-                isValid = false;
-                cpf.style.borderColor = '#e74c3c';
-            }
-
-            if (!isValid) {
-                e.preventDefault();
-                alert('Por favor, corrija os erros no formulário antes de enviar.');
-            }
-            window.alert("formulario enviado por sucesso!!")
         });
-    }
-
-
-    function criarElementoErro(inputElement) {
-        const errorElement = document.createElement('small');
-        errorElement.className = 'error-message';
-        errorElement.id = inputElement.id + '-error';
-        inputElement.parentNode.appendChild(errorElement);
-        return errorElement;
-    }
+    });
 });

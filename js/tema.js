@@ -1,78 +1,15 @@
-document.addEventListener('DOMContentLoaded', function() { 
+// A classe .dark ja e aplicada no <head> (partials/head.php) antes da renderizacao,
+// para a pagina nao piscar branca. Aqui so tratamos o botao e a persistencia.
+document.addEventListener('DOMContentLoaded', function () {
+    const raiz = document.documentElement;
+    const btnAlternarTema = document.getElementById('alternaTema');
 
-const body = document.body; 
+    if (!btnAlternarTema) {
+        return;
+    }
 
-const btnAlternarTema = document.getElementById('alternaTema');
-
-function carregarTema() {  
-
-    const temaSalvo = localStorage.getItem('preferenciaTema') || 'light'; 
-
-
-    if (temaSalvo === 'dark') { 
-        body.classList.add('tema-escuro'); 
-    if (btnAlternarTema) { 
-        btnAlternarTema.textContent = 'Alternar para Tema Claro';
-    } 
-
-    } else { 
-
-    body.classList.remove('tema-escuro'); 
-
-    if (btnAlternarTema) { 
-
-            btnAlternarTema.textContent = 'Alternar para Tema Escuro'; 
-
-        } 
-
-    } 
-
-} 
-
-function alternarESalvarTema() { 
-
-
-
-    body.classList.toggle('tema-escuro'); 
-
- 
-
-    let novoTema; 
-
- 
-
-    if (body.classList.contains('tema-escuro')) { 
-
-        novoTema = 'dark'; 
-
-    btnAlternarTema.textContent = 'Alternar para Tema Claro'; 
-
-    } else { 
-
-        novoTema = 'light'; 
-
-        btnAlternarTema.textContent = 'Alternar para Tema Escuro'; 
-
-    } 
-
- 
-
-
-
-localStorage.setItem('preferenciaTema', novoTema); 
-
-} 
-
-carregarTema(); 
-
- 
-
-
-
-if (btnAlternarTema) { 
-
-    btnAlternarTema.addEventListener('click', alternarESalvarTema); 
-
-} 
-
-}); 
+    btnAlternarTema.addEventListener('click', function () {
+        raiz.classList.toggle('dark');
+        localStorage.setItem('preferenciaTema', raiz.classList.contains('dark') ? 'dark' : 'light');
+    });
+});
