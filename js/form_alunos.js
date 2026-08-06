@@ -1,300 +1,184 @@
-
-document.addEventListener('DOMContentLoaded', function() {
-    initializeFormHandlers();
-    setupImageUploadSystem();
-});
-
-function initializeFormHandlers() {
-    // Configurar validação de formulário
-    const forms = document.querySelectorAll('form');
-    forms.forEach(form => {
-        form.addEventListener('submit', function(e) {
-            if (!validateForm(this)) {
-                e.preventDefault();
-                showMessage('Por favor, preencha todos os campos obrigatórios corretamente.', 'error');
-            }
-        });
-    });
-}
-
-function setupImageUploadSystem() {
-    // Configurar sistema de upload de imagens
-    const urlInput = document.getElementById('foto_url');
-    const fileInput = document.getElementById('foto_upload');
-    
-    if (urlInput) {
-        urlInput.addEventListener('input', function() {
-            previewUrlImage(this.value);
-            highlightActiveOption('url');
-        });
-        
-        // Mostrar instruções ao focar no campo de URL
-        urlInput.addEventListener('focus', showUrlInstructions);
+// Preview de foto (URL ou upload), arrastar-e-soltar e validacao do formulario de aluno.
+document.addEventListener('DOMContentLoaded', function () {
+    const formulario = document.querySelector('form');
+    if (!formulario) {
+        return;
     }
-    
-    if (fileInput) {
-        fileInput.addEventListener('change', function() {
-            previewUploadImage(this);
-            highlightActiveOption('upload');
-        });
-    }
-    
-    // Configurar drag and drop para upload de arquivos
-    setupDragAndDrop();
-}
 
-function previewUrlImage(url) {
+    const campoUrl = document.getElementById('foto_url');
+    const campoArquivo = document.getElementById('foto_upload');
+    const areaSoltar = document.getElementById('areaSoltar');
+    const areaPreview = document.getElementById('areaPreview');
     const preview = document.getElementById('preview');
-    if (url && isValidImageUrl(url)) {
-        preview.src = url;
-        preview.style.display = 'block';
-        
-        // Limpar o input de upload se URL for preenchida
-        const fileInput = document.getElementById('foto_upload');
-        if (fileInput) fileInput.value = '';
-        
-        showMessage('URL da imagem carregada com sucesso!', 'success');
-    } else if (url) {
-        preview.style.display = 'none';
-        showMessage('URL de imagem inválida. Verifique o link.', 'error');
-    } else {
-        preview.style.display = 'none';
-    }
-}
+    const nomeArquivo = document.getElementById('nomeArquivo');
+    const btnRemover = document.getElementById('removePreview');
+    const areaMensagem = document.getElementById('mensagemForm');
 
-function previewUploadImage(input) {
-    const preview = document.getElementById('preview');
-    if (input.files && input.files[0]) {
-        const file = input.files[0];
-        
-        // Validar tipo de arquivo
-        if (!isValidImageFile(file)) {
-            showMessage('Formato de arquivo não permitido. Use JPG, PNG, GIF ou WebP.', 'error');
-            input.value = '';
+    const TAMANHO_MAXIMO = 5 * 1024 * 1024;
+    const TIPOS_ACEITOS = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+
+    // ---------- Mensagens ----------
+    function mostrarMensagem(texto, tipo) {
+        if (!areaMensagem) {
             return;
         }
-        
-        // Validar tamanho do arquivo (máx 5MB)
-        if (file.size > 5 * 1024 * 1024) {
-            showMessage('Arquivo muito grande. O tamanho máximo é 5MB.', 'error');
-            input.value = '';
-            return;
-        }
-        
-        const reader = new FileReader();
-        
-        reader.onload = function(e) {
-            preview.src = e.target.result;
-            preview.style.display = 'block';
-            showMessage('Imagem carregada com sucesso!', 'success');
-        }
-        
-        reader.onerror = function() {
-            showMessage('Erro ao carregar a imagem. Tente novamente.', 'error');
-        }
-        
-        reader.readAsDataURL(file);
-        
-        // Limpar o input de URL se upload for feito
-        const urlInput = document.getElementById('foto_url');
-        if (urlInput) urlInput.value = '';
-    } else {
-        preview.style.display = 'none';
-    }
-}
+        areaMensagem.innerHTML =
+            '<div class="' + (tipo === 'erro' ? 'alerta-erro' : 'alerta-sucesso') + '">' +
+            '<span>' + texto + '</span></div>';
 
-function highlightActiveOption(activeType) {
-    const urlOption = document.querySelector('.upload-option:first-child');
-    const uploadOption = document.querySelector('.upload-option:last-child');
-    
-    if (activeType === 'url') {
-        urlOption.classList.add('active');
-        uploadOption.classList.remove('active');
-    } else if (activeType === 'upload') {
-        uploadOption.classList.add('active');
-        urlOption.classList.remove('active');
-    } else {
-        urlOption.classList.remove('active');
-        uploadOption.classList.remove('active');
-    }
-}
-
-function showUrlInstructions() {
-    const instructions = `
-        <div class="upload-instructions">
-            <h4>📸 Como obter URL de imagem do Google:</h4>
-            <ol>
-                <li>Pesquise uma imagem no Google Images</li>
-                <li>Clique na imagem desejada para ampliá-la</li>
-                <li>Clique com o botão direito na imagem</li>
-                <li>Selecione <strong>"Copiar endereço da imagem"</strong></li>
-                <li>Cole o endereço no campo acima</li>
-            </ol>
-            <p><small><strong>Dica:</strong> Procure por imagens com boa qualidade e que representem bem o aluno.</small></p>
-        </div>
-    `;
-    
-    // Remover instruções anteriores
-    const existingInstructions = document.querySelector('.upload-instructions');
-    if (existingInstructions) {
-        existingInstructions.remove();
-    }
-    
-    // Inserir novas instruções
-    const urlInput = document.getElementById('foto_url');
-    if (urlInput) {
-        urlInput.insertAdjacentHTML('afterend', instructions);
-    }
-}
-
-function setupDragAndDrop() {
-    const fileInput = document.getElementById('foto_upload');
-    const uploadOption = document.querySelector('.upload-option:last-child');
-    
-    if (!uploadOption || !fileInput) return;
-    
-    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-        uploadOption.addEventListener(eventName, preventDefaults, false);
-    });
-    
-    function preventDefaults(e) {
-        e.preventDefault();
-        e.stopPropagation();
-    }
-    
-    ['dragenter', 'dragover'].forEach(eventName => {
-        uploadOption.addEventListener(eventName, highlight, false);
-    });
-    
-    ['dragleave', 'drop'].forEach(eventName => {
-        uploadOption.addEventListener(eventName, unhighlight, false);
-    });
-    
-    function highlight() {
-        uploadOption.classList.add('active');
-        uploadOption.style.borderColor = '#2ecc71';
-        uploadOption.style.backgroundColor = '#e8f5e8';
-    }
-    
-    function unhighlight() {
-        uploadOption.classList.remove('active');
-        uploadOption.style.borderColor = '';
-        uploadOption.style.backgroundColor = '';
-    }
-    
-    uploadOption.addEventListener('drop', handleDrop, false);
-    
-    function handleDrop(e) {
-        const dt = e.dataTransfer;
-        const files = dt.files;
-        
-        if (files.length > 0) {
-            fileInput.files = files;
-            previewUploadImage(fileInput);
-        }
-    }
-}
-
-function isValidImageUrl(url) {
-    // Verificar se é uma URL válida e se parece com uma imagem
-    try {
-        const urlObj = new URL(url);
-        const path = urlObj.pathname.toLowerCase();
-        return /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(path);
-    } catch {
-        return false;
-    }
-}
-
-function isValidImageFile(file) {
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-    return allowedTypes.includes(file.type);
-}
-
-function validateForm(form) {
-    let isValid = true;
-    const requiredFields = form.querySelectorAll('[required]');
-    
-    requiredFields.forEach(field => {
-        if (!field.value.trim()) {
-            field.style.borderColor = '#e74c3c';
-            isValid = false;
-        } else {
-            field.style.borderColor = '#27ae60';
-        }
-    });
-    
-    // Validar idade
-    const idadeField = form.querySelector('input[type="number"]');
-    if (idadeField && idadeField.value) {
-        const idade = parseInt(idadeField.value);
-        if (idade < 5 || idade > 100) {
-            idadeField.style.borderColor = '#e74c3c';
-            showMessage('Idade deve estar entre 5 e 100 anos.', 'error');
-            isValid = false;
-        }
-    }
-    
-    return isValid;
-}
-
-function showMessage(message, type) {
-    // Remover mensagens anteriores
-    const existingMessages = document.querySelectorAll('.form-message');
-    existingMessages.forEach(msg => msg.remove());
-    
-    // Criar nova mensagem
-    const messageDiv = document.createElement('div');
-    messageDiv.className = `form-message ${type}`;
-    messageDiv.style.cssText = `
-        padding: 12px 15px;
-        margin: 10px 0;
-        border-radius: 8px;
-        font-weight: 600;
-        text-align: center;
-        ${type === 'success' ? 'background-color: #d5f4e6; color: #27ae60; border: 1px solid #27ae60;' : ''}
-        ${type === 'error' ? 'background-color: #fadbd8; color: #e74c3c; border: 1px solid #e74c3c;' : ''}
-    `;
-    messageDiv.textContent = message;
-    
-    // Inserir mensagem no formulário
-    const form = document.querySelector('form');
-    if (form) {
-        form.insertBefore(messageDiv, form.firstChild);
-        
-        // Auto-remover após 5 segundos
-        setTimeout(() => {
-            messageDiv.remove();
+        clearTimeout(mostrarMensagem.temporizador);
+        mostrarMensagem.temporizador = setTimeout(function () {
+            areaMensagem.innerHTML = '';
         }, 5000);
     }
-}
 
-// Função para limpar o formulário
-function clearForm() {
-    const form = document.querySelector('form');
-    if (form) {
-        form.reset();
-        const preview = document.getElementById('preview');
-        if (preview) preview.style.display = 'none';
-        
-        const urlOption = document.querySelector('.upload-option:first-child');
-        const uploadOption = document.querySelector('.upload-option:last-child');
-        if (urlOption) urlOption.classList.remove('active');
-        if (uploadOption) uploadOption.classList.remove('active');
-        
-        showMessage('Formulário limpo!', 'success');
+    // ---------- Preview ----------
+    function exibirPreview(fonte, rotulo) {
+        preview.src = fonte;
+        nomeArquivo.textContent = rotulo || '';
+        areaPreview.classList.remove('hidden');
+        areaPreview.classList.add('flex');
     }
-}
 
-// Adicionar botão de limpar formulário se não existir
-document.addEventListener('DOMContentLoaded', function() {
-    const formActions = document.querySelector('.form-actions');
-    if (formActions && !document.querySelector('.btn-limpar')) {
-        const clearButton = document.createElement('button');
-        clearButton.type = 'button';
-        clearButton.className = 'btn-form btn-cancelar-form btn-limpar';
-        clearButton.textContent = '🗑️ Limpar';
-        clearButton.onclick = clearForm;
-        formActions.appendChild(clearButton);
+    function ocultarPreview() {
+        preview.removeAttribute('src');
+        nomeArquivo.textContent = '';
+        areaPreview.classList.add('hidden');
+        areaPreview.classList.remove('flex');
     }
+
+    function urlDeImagemValida(url) {
+        try {
+            return /\.(jpe?g|png|gif|webp|bmp)$/i.test(new URL(url).pathname);
+        } catch (erro) {
+            return false;
+        }
+    }
+
+    function processarArquivo(arquivo) {
+        if (!TIPOS_ACEITOS.includes(arquivo.type)) {
+            mostrarMensagem('Formato não permitido. Use JPG, PNG, GIF ou WebP.', 'erro');
+            campoArquivo.value = '';
+            return;
+        }
+
+        if (arquivo.size > TAMANHO_MAXIMO) {
+            mostrarMensagem('Arquivo muito grande. O tamanho máximo é 5 MB.', 'erro');
+            campoArquivo.value = '';
+            return;
+        }
+
+        const leitor = new FileReader();
+        leitor.onload = function (evento) {
+            exibirPreview(evento.target.result, arquivo.name);
+            if (campoUrl) {
+                campoUrl.value = '';
+            }
+        };
+        leitor.onerror = function () {
+            mostrarMensagem('Erro ao ler a imagem. Tente novamente.', 'erro');
+        };
+        leitor.readAsDataURL(arquivo);
+    }
+
+    if (campoUrl) {
+        campoUrl.addEventListener('input', function () {
+            const valor = this.value.trim();
+
+            if (valor === '') {
+                ocultarPreview();
+                return;
+            }
+
+            if (urlDeImagemValida(valor)) {
+                exibirPreview(valor, valor);
+                if (campoArquivo) {
+                    campoArquivo.value = '';
+                }
+            } else {
+                ocultarPreview();
+            }
+        });
+    }
+
+    if (campoArquivo) {
+        campoArquivo.addEventListener('change', function () {
+            if (this.files && this.files[0]) {
+                processarArquivo(this.files[0]);
+            } else {
+                ocultarPreview();
+            }
+        });
+    }
+
+    if (btnRemover) {
+        btnRemover.addEventListener('click', function () {
+            if (campoUrl) campoUrl.value = '';
+            if (campoArquivo) campoArquivo.value = '';
+            ocultarPreview();
+        });
+    }
+
+    // ---------- Arrastar e soltar ----------
+    if (areaSoltar && campoArquivo) {
+        const CLASSES_ATIVA = ['border-tkd-500', 'bg-tkd-50/50'];
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(function (evento) {
+            areaSoltar.addEventListener(evento, function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            });
+        });
+
+        ['dragenter', 'dragover'].forEach(function (evento) {
+            areaSoltar.addEventListener(evento, function () {
+                areaSoltar.classList.add(...CLASSES_ATIVA);
+            });
+        });
+
+        ['dragleave', 'drop'].forEach(function (evento) {
+            areaSoltar.addEventListener(evento, function () {
+                areaSoltar.classList.remove(...CLASSES_ATIVA);
+            });
+        });
+
+        areaSoltar.addEventListener('drop', function (e) {
+            const arquivos = e.dataTransfer.files;
+            if (arquivos.length > 0) {
+                campoArquivo.files = arquivos;
+                processarArquivo(arquivos[0]);
+            }
+        });
+    }
+
+    // ---------- Validação ----------
+    const CLASSES_ERRO = ['ring-2', 'ring-red-500'];
+
+    formulario.addEventListener('submit', function (evento) {
+        let valido = true;
+
+        formulario.querySelectorAll('[required]').forEach(function (campo) {
+            campo.classList.remove(...CLASSES_ERRO);
+            if (campo.value.trim() === '') {
+                campo.classList.add(...CLASSES_ERRO);
+                valido = false;
+            }
+        });
+
+        const campoIdade = document.getElementById('idade');
+        if (campoIdade && campoIdade.value !== '') {
+            const idade = parseInt(campoIdade.value, 10);
+            if (idade < 5 || idade > 100) {
+                campoIdade.classList.add(...CLASSES_ERRO);
+                mostrarMensagem('A idade deve estar entre 5 e 100 anos.', 'erro');
+                evento.preventDefault();
+                return;
+            }
+        }
+
+        if (!valido) {
+            evento.preventDefault();
+            mostrarMensagem('Preencha todos os campos obrigatórios.', 'erro');
+        }
+    });
 });
